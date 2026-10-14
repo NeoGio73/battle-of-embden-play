@@ -6,7 +6,8 @@
 <title>The Battle of Embden · Extra Credit</title>
 <meta name="description" content="Animated banner for The Battle of Embden, an extra-credit glycolysis game.">
 <!-- Models, lightened for the web: AT-ST Scout by Sean Turner (BlenderKit, Royalty Free); speeder bike by Idmenthal (Sketchfab, CC BY 4.0);
-     rider from "Obi Wan rig", posted by maxigrec (Sketchfab, listed as CC BY 4.0); Ewok by Ulrik S. Selvik (Sketchfab, CC BY 4.0);
+     rider from "Obi Wan rig", posted by maxigrec (Sketchfab, listed as CC BY 4.0); Chewbacca, posted by Stym (Sketchfab, listed as CC BY 4.0);
+     Ewok by Ulrik S. Selvik (Sketchfab, CC BY 4.0);
      Endor bunker by aclarke064 (Sketchfab, CC BY-NC-SA 4.0); Millennium Falcon supplied by the course author. three.js (MIT).
      Unofficial fan learning game, not affiliated with Lucasfilm or Disney. -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -135,6 +136,7 @@ const lerp = (a, b, t) => a + (b - a) * t;
 function mulberry(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 const rand = mulberry(20261014);
 const srgb = (r, g, b) => new THREE.Color().setRGB(r, g, b, THREE.SRGBColorSpace);
+const UNCONVERTED = srgb(0.5, 1.05, 1.75);   // the game's tint for the second bike (EmbdenGame.unconverted)
 
 // ---------- renderer, scene, camera ----------
 const canvas = document.getElementById('c');
@@ -196,14 +198,15 @@ const additive = (map, color = 0xffffff) => new THREE.SpriteMaterial({ map, colo
 // Four places in one forest, one for each shot, far apart. Each shot is laid out in its own frame: the camera near the
 // origin, looking down -Z. Corridors keep trees out of the action and out of the camera's line of sight.
 const SHOTS = [
-  { name: 'bikes', base: new V3(0, 0, 0), dur: 4.6, hud: 'PREPARATORY PHASE  ·  STEPS 1–5',
+  { name: 'bikes', base: new V3(0, 0, 0), dur: 4.2, hud: 'PREPARATORY PHASE  ·  STEPS 1–5',
     clear: [[0, 2, 0, 2, 4], [7.5, -230, 7.5, 30, 7]] },
-  { name: 'walker', base: new V3(500, 0, 0), dur: 6.6, hud: 'PAYOFF PHASE  ·  STEPS 6–10',
+  { name: 'walker', base: new V3(500, 0, 0), dur: 5.8, hud: 'PAYOFF PHASE  ·  STEPS 6–10',
     clear: [[0, 2, 0, 2, 6], [0, 0, 6, -30, 6], [2, -24, 10, -56, 9], [8, -48, 38, -80, 13]] },
-  { name: 'ewok', base: new V3(1000, 0, 0), dur: 2.8, hud: 'FRIENDLY EWOK SPOTTED',
+  { name: 'chewie', base: new V3(500, 0, 0), dur: 1.6, hud: 'CHEWIE: THE PAYOFF PHASE STARTS HERE', clear: [] },
+  { name: 'ewok', base: new V3(1000, 0, 0), dur: 2.4, hud: 'FRIENDLY EWOK SPOTTED',
     clear: [[0, 1, 0, 1, 2.6], [0, 0, 3.4, -9, 1.6], [3.4, -9, 12, -7, 1.6]] },
   { name: 'bunker', base: new V3(1500, 0, 0), dur: 6.0, hud: 'SHIELD GENERATOR ONLINE',
-    clear: [[0, 2, 0, 2, 6], [0, 0, 17, -100, 12], [17, -100, 17, -100, 30], [34, -120, 110, -230, 28], [44, -150, 44, -150, 8]] },
+    clear: [[0, 2, 0, 2, 6], [0, 0, 17, -100, 12], [17, -100, 17, -100, 30], [62, -106, 62, -106, 24], [62, -106, 100, -135, 26], [0, 0, 62, -106, 10], [0, 0, 96, -132, 12], [44, -150, 44, -150, 8]] },
 ];
 let acc = 0; for (const S of SHOTS) { S.start = acc; acc += S.dur; }
 const LOOP = acc;
@@ -220,6 +223,7 @@ const isClear = (S, x, z, pad = 0) => S.clear.every(c => segDist(x, z, c) > c[4]
   const leafMat = new THREE.MeshStandardMaterial({ color: srgb(0.15, 0.3, 0.15), roughness: 1 });
   const trees = [], boughs = [];
   for (const S of SHOTS) {
+    if (!S.clear.length) continue;   // a shot that reuses another's place (Chewbacca's) plants nothing of its own
     for (let i = 0, n = 0; i < 900 && n < 120; i++) {
       const x = -150 + rand() * 300, z = -280 + rand() * 300, r = 1.0 + rand() * 1.7;
       if (!isClear(S, x, z, r + 1) || trees.some(t => t.S === S && Math.hypot(t.x - x, t.z - z) < t.r + r + 4)) continue;
@@ -261,7 +265,7 @@ function fernGeometry() {
 const fernMat = new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: 0.9 });
 const FERNS = [];
 function fern(S, x, z, size, yaw = rand() * 6.28) { FERNS.push({ p: new V3(x, 0, z).add(S.base), size, yaw }); }
-for (const S of SHOTS) for (let i = 0, n = 0; i < 1400 && n < 190; i++) {
+for (const S of SHOTS) for (let i = 0, n = 0; S.clear.length && i < 1400 && n < 190; i++) {
   const x = -60 + rand() * 120, z = -160 + rand() * 170;
   if (!isClear(S, x, z, -1.2) && rand() < 0.85) continue;
   if (S.clear.some(c => segDist(x, z, c) < c[4] - 2.5)) continue;
@@ -306,7 +310,8 @@ const walker = { obj: null, mixer: null, walk: null, gun: null, clip: 1, stride:
 const bikes = [{ obj: null }, { obj: null }];
 const ewok = { obj: null };
 const bunker = { obj: null, ruin: null };
-const falcon = { obj: null, glow: null, mats: [] };
+const chewie = { obj: null };
+const falcon = { obj: null, glow: null, gear: [], shadow: null, h: 6, yaw: 0 };
 
 // ---------- effects: bolts, bursts, the bunker blast ----------
 const boltCore = new THREE.MeshBasicMaterial({ color: srgb(1, 0.55, 0.45), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false, fog: false });
@@ -457,7 +462,7 @@ function shotWalker(S, u) {
 }
 // an Ewok rises from the ferns, looks about, and scampers off to the right
 function shotEwok(S, u) {
-  const rise = smooth(0.15, 0.7, u), go = smooth(1.7, 2.7, u);
+  const rise = smooth(0.15, 0.65, u), go = smooth(1.35, 2.3, u);
   W(S, 3.4 + 7 * go, -1.25 * (1 - rise) + 0.22 * Math.abs(Math.sin(go * 14)) * (go > 0 && go < 1 ? 1 : 0), -9 + 1.5 * go, _a);
   if (ewok.obj) {
     ewok.obj.position.copy(_a);
@@ -467,14 +472,18 @@ function shotEwok(S, u) {
   W(S, 3.6 + 1.2 * go, 0.75, -9, _look);
   return _hero.copy(_a).add(_tmp.set(0, 0.7, 0));
 }
-// the charges go off at the bunker door, the shield beam goes out, and the Falcon climbs away
-const BLAST = 1.4, FALCON_IN = 1.75;
-function falconAt(u, out) {
-  const t = Math.max(0, u - FALCON_IN), k = t * t;
-  return out.set(22 + 7 * t + 2.2 * k, 6 + 9 * t + 2.4 * k, -112 - 10 * t - 2.6 * k);
+// The charges go off at the bunker door and the shield beam goes out. The Falcon, parked on its landing struts beside the
+// bunker, lifts straight up, tucks the struts away, and climbs off into the sky; the camera turns to follow it.
+const BLAST = 1.2, PAN = 1.8, LIFT = 2.5, GEAR = 2.4;
+const PARK = new V3(62, 0, -106), HEADING = new V3(0.8, 0, -0.6).normalize();
+const _fp = new V3(), _fl = new V3();
+function falconAt(u, out) {   // in the shot's own frame
+  const t = Math.max(0, u - LIFT), f = Math.max(0, t - 1.0);
+  const rise = 9 * smooth(0, 1.4, t) + 9 * f + 6 * f * f, ahead = 3 * f + 4 * f * f;
+  return out.copy(PARK).addScaledVector(HEADING, ahead).add(_fp.set(0, falcon.h + rise, 0));
 }
 function shotBunker(S, u) {
-  const blown = u >= BLAST + 0.35;
+  const blown = u >= BLAST + 0.35, t = u - LIFT;
   if (bunker.obj) { W(S, 17, 0, -100, bunker.obj.position); bunker.obj.visible = !blown; }
   if (bunker.ruin) { bunker.ruin.position.copy(bunker.obj.position); bunker.ruin.visible = blown; }
   W(S, 44, 0, -150, beam.position); beam.position.y = 350;
@@ -484,21 +493,55 @@ function shotBunker(S, u) {
   bunkerBursts[1].g.position.copy(door).add(_tmp.set(-5, 5, -6)); bunkerBursts[1].show(u - BLAST - 0.22);
   bunkerBursts[2].g.position.copy(door).add(_tmp.set(5, 8, -10)); bunkerBursts[2].show(u - BLAST - 0.45);
   if (falcon.obj) {
-    falconAt(u, _a); falconAt(u + 0.05, _b);
-    falcon.obj.visible = u >= FALCON_IN;
-    const fade = smooth(FALCON_IN, FALCON_IN + 0.5, u);   // it comes out of the fireball
-    for (const m of falcon.mats) { m.opacity = fade; m.transparent = fade < 1; m.depthWrite = fade > 0.5; }
-    falcon.obj.position.copy(_a).add(S.base); orientAlong(falcon.obj, _b.sub(_a), -0.35);
-    if (falcon.glow) falcon.glow.material.opacity = 0.8 + 0.2 * Math.sin(u * 37);
+    falcon.obj.visible = true;
+    falconAt(u, falcon.obj.position).add(S.base);
+    const k = smooth(0.8, 2.0, t);   // nose up and a little bank as it pulls away
+    falcon.obj.rotation.set(-0.28 * k, falcon.yaw, -0.18 * k, 'YXZ');
+    const tuck = 1 - smooth(0.3, 0.9, t);
+    falcon.gear.forEach(g => { g.scale.y = Math.max(0.001, tuck); g.visible = tuck > 0.01; });
+    if (falcon.glow) falcon.glow.material.opacity = smooth(-0.3, 0.6, t) * (0.8 + 0.2 * Math.sin(u * 37));
+    if (falcon.shadow) { falcon.shadow.visible = true; W(S, PARK.x, 0.05, PARK.z, falcon.shadow.position); falcon.shadow.material.opacity = 1 - 0.95 * smooth(0, 1.6, t); }
   }
-  hud(u < BLAST ? S.hud : u < FALCON_IN + 0.6 ? 'SHIELD DOWN' : 'SHIELD DOWN  ·  PYRUVATE ABOARD THE FALCON', u < BLAST);
+  hud(u < BLAST ? S.hud : u < LIFT + 0.4 ? 'SHIELD DOWN' : 'SHIELD DOWN  ·  PYRUVATE ABOARD THE FALCON', u < BLAST);
   const shake = Math.max(0, 1 - (u - BLAST) / 0.9) * (u > BLAST ? 0.5 : 0);
   W(S, 0.6 * u + shake * Math.sin(u * 71), 5 + shake * Math.sin(u * 53), 0, camera.position);
-  const follow = smooth(FALCON_IN + 0.6, FALCON_IN + 3.2, u);
-  W(S, 19, 7, -100, _look).lerp(falconAt(u, _b).add(S.base), follow * 0.8);
-  return u >= FALCON_IN + 1.0 ? _hero.copy(falcon.obj ? falcon.obj.position : _look) : W(S, 19, 7, -100, _hero);
+  // from the bunker, the camera turns to the Falcon as it lifts, then follows it up; the mist thins as it looks to the sky
+  W(S, 19, 7, -100, _look).lerp(W(S, PARK.x, 8, PARK.z, _fl), smooth(PAN, LIFT + 0.6, u) * 0.85);
+  const follow = smooth(LIFT + 0.8, LIFT + 3.2, u);
+  if (follow > 0) _look.lerp(falconAt(u, _fl).add(S.base), follow * 0.8);
+  scene.fog.far = lerp(240, 430, smooth(LIFT + 0.5, LIFT + 3, u));
+  return u >= PAN && falcon.obj ? _hero.copy(falcon.obj.position) : W(S, 19, 7, -100, _hero);
 }
-const SHOT_FN = { bikes: shotBikes, walker: shotWalker, ewok: shotEwok, bunker: shotBunker };
+// Chewbacca's moment, as in the game: the camera jumps in on the walker's head, the roof hatch swings open and he rises from it.
+// The walker keeps walking from where the last shot left it.
+const _hq = new THREE.Quaternion(), _top = new V3(), _side = new V3();
+function shotChewie(S, u) {
+  const W2 = SHOTS[1];
+  shotWalker(W2, W2.dur + u);
+  hud(S.hud, false);
+  const open = smooth(0.05, 0.4, u), up = smooth(0.25, 0.8, u);
+  if (walker.lid) {
+    const L = walker.lid;
+    _hq.setFromAxisAngle(L.axis, open * 112 * Math.PI / 180);
+    L.node.quaternion.copy(_hq).multiply(L.restRot);
+    L.node.position.copy(L.restPos).sub(L.hinge).applyQuaternion(_hq).add(L.hinge);
+    L.node.parent.localToWorld(_top.copy(L.rest));
+    walker.obj.updateMatrixWorld(true);
+  } else _top.copy(walker.obj ? walker.obj.position : W(W2, 0, 0, -30)).add(_tmp.set(0, 8.6, 0));
+  _side.set(-WALK_DIR.z, 0, WALK_DIR.x);
+  // in front of the walker and a little to one side, closing in fast
+  const d = lerp(30, 13.5, smooth(0, 0.45, u));
+  camera.position.copy(_top).addScaledVector(WALK_DIR, d).addScaledVector(_side, d * 0.3).add(_tmp.set(0, 0.8, 0));
+  if (chewie.obj) {
+    chewie.obj.visible = up > 0.01;
+    chewie.obj.position.copy(_top).add(_tmp.set(0, lerp(-2.05, 0.45, up) + Math.sin(u * 27) * 0.04 * up, 0));
+    _tmp.copy(camera.position).sub(chewie.obj.position);
+    chewie.obj.rotation.set(-0.12 * smooth(0.8, 1.1, u), Math.atan2(_tmp.x, _tmp.z), 0.04 * Math.sin(u * 30) * smooth(0.8, 1.1, u), 'YXZ');
+  }
+  _look.copy(_top).add(_tmp.set(0, 0.6 + 0.6 * up, 0));
+  return _hero.copy(_top).add(_tmp.set(0, 1, 0));
+}
+const SHOT_FN = { bikes: shotBikes, walker: shotWalker, chewie: shotChewie, ewok: shotEwok, bunker: shotBunker };
 
 // ---------- one frame, as a function of the clock ----------
 let simT = 0;
@@ -509,15 +552,20 @@ function step(dt) {
   const S = SHOTS.find(s => t >= s.start && t < s.start + s.dur) || SHOTS[0], u = t - S.start;
   // only the current shot's actors are shown
   for (const B of bikes) if (B.obj) { B.obj.visible = false; if (B.shadow) B.shadow.visible = false; }
-  if (walker.obj) walker.obj.visible = S.name === 'walker';
-  if (walker.shadow) walker.shadow.visible = S.name === 'walker';
-  PYLONS.forEach(P => { P.g.visible = S.name === 'walker'; });
+  const walking = S.name === 'walker' || S.name === 'chewie';
+  if (walker.obj) walker.obj.visible = walking;
+  if (walker.shadow) walker.shadow.visible = walking;
+  PYLONS.forEach(P => { P.g.visible = walking; });
+  if (chewie.obj) chewie.obj.visible = false;
+  if (walker.lid) { walker.lid.node.quaternion.copy(walker.lid.restRot); walker.lid.node.position.copy(walker.lid.restPos); }
   bolts.forEach(g => { g.visible = false; }); muzzle.visible = false; pylonBurst.g.visible = false;
   if (ewok.obj) ewok.obj.visible = S.name === 'ewok';
   if (bunker.obj) bunker.obj.visible = false; if (bunker.ruin) bunker.ruin.visible = false;
   beam.visible = S.name === 'bunker'; bunkerBursts.forEach(b => { b.g.visible = false; });
   if (falcon.obj) falcon.obj.visible = false;
-  if (S.name !== 'walker' && S.name !== 'bunker') hud(S.hud, false);
+  if (falcon.shadow) falcon.shadow.visible = false;
+  scene.fog.far = 240;
+  if (S.name !== 'walker' && S.name !== 'bunker' && S.name !== 'chewie') hud(S.hud, false);
   const hero = SHOT_FN[S.name](S, u);
   if (S.name !== 'bunker') { if (bunker.obj) bunker.obj.visible = false; }
   camera.lookAt(_look);
@@ -559,9 +607,30 @@ const ready = Promise.all([
     const clip = gltf.animations.find(a => /Walk/i.test(a.name));
     if (clip) { walker.mixer = new THREE.AnimationMixer(root); walker.walk = walker.mixer.clipAction(clip); walker.walk.play(); walker.clip = clip.duration; }
     walker.shadow = groundShadow(9, 9);
+    const lid = findNode(root, 'Circle036', 'Circle.036');
+    if (lid && lid.parent) {
+      if (walker.mixer) walker.mixer.setTime(0);
+      obj.updateMatrixWorld(true);
+      // measured in the world while the walker faces +Z, then kept in the lid's parent's frame so it rides on the head
+      const P = lid.parent, inv = new THREE.Matrix4().copy(P.matrixWorld).invert(), b = new THREE.Box3().setFromObject(lid, true);
+      const cz = (b.min.z + b.max.z) / 2;
+      walker.lid = { node: lid, restPos: lid.position.clone(), restRot: lid.quaternion.clone(),
+        hinge: P.worldToLocal(new V3(b.min.x, b.min.y, cz)), rest: P.worldToLocal(new V3((b.min.x + b.max.x) / 2, b.min.y, cz)),
+        axis: new V3(0, 0, 1).transformDirection(inv).normalize() };
+    }
+  }),
+  load('chewie.bin').then(gltf => {
+    // drawn larger than life, as in the game, with his origin at the waist where the hatch rim will be
+    const root = gltf.scene, holder = new THREE.Group(), outer = new THREE.Group();
+    holder.add(root); holder.scale.setScalar(1.6); outer.add(holder); scene.add(outer);
+    // the sun is behind him in his close-up, so his maps also light him a little, much as the game's shader brightens them
+    root.traverse(o => { if (o.isMesh) { const m = o.material; m.color.multiplyScalar(/Bag/.test(m.name) ? 1.4 : 1.8); if (m.map) { m.emissiveMap = m.map; m.emissive.setRGB(1, 1, 1); m.emissiveIntensity = 0.55; } } });
+    outer.visible = false; chewie.obj = outer;
   }),
   load('bike.bin').then(gltf => {
     bikes.forEach((B, i) => { const { obj } = fit(i ? gltf.scene.clone(true) : gltf.scene, 4.6, 'xz', false); B.obj = obj; B.shadow = groundShadow(3, 5); });
+    // As in the game, the second bike and its rider are a cold blue: the triose phosphate that isomerase has not yet converted.
+    bikes[1].obj.traverse(o => { if (o.isMesh) { o.material = o.material.clone(); o.material.color.multiply(UNCONVERTED); } });
   }),
   load('ewok.bin').then(gltf => { ewok.obj = fit(gltf.scene, 1.4).obj; }),
   load('bunker.bin').then(gltf => {
@@ -576,7 +645,15 @@ const ready = Promise.all([
     const glow = new THREE.Sprite(additive(TEX.blue, 0x9fdcff));
     glow.position.set(0, 0.3, -dims.z / 2 - 0.6); glow.scale.set(dims.x * 0.75, dims.y * 1.3, 1);
     obj.add(glow); falcon.glow = glow; falcon.obj = obj;
-    obj.traverse(o => { if (o.isMesh) { o.material.fog = false; falcon.mats.push(o.material); } });
+    falcon.h = dims.y / 2 + GEAR - 0.4; falcon.yaw = Math.atan2(HEADING.x, HEADING.z);
+    // three landing struts with pads, drawn in code (the model's own gear is folded away), and a shadow under the hull
+    const steel = new THREE.MeshStandardMaterial({ color: srgb(0.3, 0.31, 0.32), roughness: 0.6, metalness: 0.5 });
+    const leg = new THREE.CylinderGeometry(0.35, 0.45, GEAR, 10).translate(0, -GEAR / 2, 0), pad = new THREE.CylinderGeometry(1.0, 1.15, 0.3, 14).translate(0, -GEAR, 0);
+    for (const [x, z] of [[-0.24, 0.18], [0.24, 0.18], [0, -0.26]]) {
+      const g = new THREE.Group(); g.add(new THREE.Mesh(leg, steel), new THREE.Mesh(pad, steel));
+      g.position.set(x * dims.x, -dims.y / 2 + 0.4, z * dims.z); obj.add(g); falcon.gear.push(g);
+    }
+    falcon.shadow = groundShadow(30, 30); falcon.shadow.material = shadowMat.clone();
   }),
 ]);
 let last = 0, running = false, visible = true, raf = 0;
