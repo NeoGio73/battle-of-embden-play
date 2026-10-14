@@ -1,0 +1,622 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Battle of Embden · Extra Credit</title>
+<meta name="description" content="Animated banner for The Battle of Embden, an extra-credit glycolysis game.">
+<!-- Models, lightened for the web: AT-ST Scout by Sean Turner (BlenderKit, Royalty Free); speeder bike by Idmenthal (Sketchfab, CC BY 4.0);
+     rider from "Obi Wan rig", posted by maxigrec (Sketchfab, listed as CC BY 4.0); Ewok by Ulrik S. Selvik (Sketchfab, CC BY 4.0);
+     Endor bunker by aclarke064 (Sketchfab, CC BY-NC-SA 4.0); Millennium Falcon supplied by the course author. three.js (MIT).
+     Unofficial fan learning game, not affiliated with Lucasfilm or Disney. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap">
+<style>
+/* Built like The Galvanic Falcon's banner: real words on the left, the scene behind and to the right.
+   Colours are the game's: forest-night ink, mist, cyan readouts and gold. */
+:root {
+  --ink: #050b16;
+  --gold: #ffc24d;
+  --cyan: #3bdbeb;
+  --white: #eef7f8;
+  --muted: #b3c8cc;
+  --mist: #78947f;
+  --f-ui: 'Inter', 'Segoe UI', system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--ink); color: var(--white); font-family: var(--f-ui); overflow: hidden; -webkit-font-smoothing: antialiased; }
+#stage { position: fixed; inset: 0; overflow: hidden; background: linear-gradient(180deg, #8aa392 0%, var(--mist) 55%, #4b5a45 100%); }
+/* the poster shows until the 3D scene is ready, and stays if it can't run */
+#poster { position: absolute; inset: 0; background: url(banner_poster.jpg) center / cover no-repeat; opacity: 0; transition: opacity 0.6s ease; }
+body.poster #poster { opacity: 1; }
+#c { position: absolute; inset: 0; width: 100%; height: 100%; display: block; opacity: 0; transition: opacity 1.2s ease; }
+body.live #c { opacity: 1; }
+/* darken behind the words so they stay readable over the misty forest */
+#scrim { position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(90deg, rgba(5,11,22,0.93) 0%, rgba(5,11,22,0.84) 28%, rgba(5,11,22,0.42) 48%, rgba(5,11,22,0) 62%),
+              linear-gradient(0deg, rgba(5,11,22,0.5) 0%, rgba(5,11,22,0) 24%); }
+.corner { position: absolute; width: 22px; height: 22px; border: 0 solid rgba(255,194,77,0.6); pointer-events: none; }
+.corner.tl { left: 12px; top: 12px; border-left-width: 2px; border-top-width: 2px; }
+.corner.tr { right: 12px; top: 12px; border-right-width: 2px; border-top-width: 2px; }
+.corner.bl { left: 12px; bottom: 12px; border-left-width: 2px; border-bottom-width: 2px; }
+.corner.br { right: 12px; bottom: 12px; border-right-width: 2px; border-bottom-width: 2px; }
+#copy { position: absolute; left: clamp(22px, 4.2vw, 48px); top: 50%; transform: translateY(-50%); width: min(44%, 450px); }
+.eyebrow { display: inline-flex; align-items: center; gap: 10px; font-weight: 700; font-size: clamp(12px, 1.45vw, 14px);
+  letter-spacing: 0.2em; color: var(--gold); text-transform: uppercase; }
+.eyebrow .pts { color: var(--ink); background: var(--gold); padding: 4px 8px 3px; letter-spacing: 0.1em; border-radius: 2px; font-weight: 800; }
+h1 { margin: 12px 0 0; font-weight: 800; line-height: 0.92; letter-spacing: -0.01em; text-transform: uppercase; }
+h1 .the { display: block; font-size: clamp(14px, 2vw, 20px); font-weight: 700; letter-spacing: 0.3em; color: var(--cyan); margin-bottom: 8px; }
+h1 .big { display: block; font-size: clamp(36px, 6.6vw, 68px); color: #fff; letter-spacing: 0.01em; text-shadow: 0 2px 0 rgba(0,0,0,0.45), 0 0 30px rgba(59,219,235,0.25); }
+.lede { margin: 14px 0 0; font-size: clamp(14px, 1.7vw, 17px); line-height: 1.45; color: var(--white); max-width: 30em; text-shadow: 0 1px 8px rgba(0,0,0,0.85); }
+.lede b { color: var(--gold); font-weight: 700; }
+.cta { margin-top: clamp(14px, 2.3vw, 22px); display: flex; align-items: center; flex-wrap: wrap; gap: 12px 16px; }
+.btn { display: inline-flex; align-items: center; gap: 10px; font-weight: 800; font-size: clamp(14px, 1.6vw, 16px);
+  letter-spacing: 0.08em; color: var(--ink); background: var(--gold); text-decoration: none; padding: 12px 18px 11px; border-radius: 3px;
+  box-shadow: 0 0 0 1px rgba(255,194,77,0.4), 0 6px 22px rgba(0,0,0,0.35); transition: transform 0.15s ease, background 0.15s ease; }
+.btn:hover { background: #ffd47a; transform: translateY(-1px); }
+.btn:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
+.btn svg { width: 16px; height: 16px; }
+.meta { font-size: clamp(12px, 1.35vw, 14px); color: var(--muted); }
+#hud { position: absolute; right: 22px; bottom: 18px; display: flex; align-items: center; gap: 9px; font-weight: 700;
+  font-size: 12px; letter-spacing: 0.18em; color: var(--white); text-shadow: 0 1px 6px #000, 0 0 2px #000; pointer-events: none; opacity: 0; transition: opacity 0.8s ease; }
+body.live #hud { opacity: 1; }
+#hud .blip { width: 8px; height: 8px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 10px var(--cyan); animation: blink 1.1s steps(2, start) infinite; }
+#hud.alert .blip { background: #ff6a55; box-shadow: 0 0 10px #ff6a55; }
+@keyframes blink { to { visibility: hidden; } }
+#copy > * { opacity: 0; transform: translateY(10px); animation: rise 0.7s cubic-bezier(.2,.7,.2,1) forwards; }
+#copy > :nth-child(1) { animation-delay: 0.1s; }
+#copy > :nth-child(2) { animation-delay: 0.22s; }
+#copy > :nth-child(3) { animation-delay: 0.36s; }
+#copy > :nth-child(4) { animation-delay: 0.5s; }
+@keyframes rise { to { opacity: 1; transform: none; } }
+/* narrow (a phone, or a thin course column): words on top, the action underneath */
+@media (max-aspect-ratio: 5/4) {
+  #scrim { background: linear-gradient(180deg, rgba(5,11,22,0.95) 0%, rgba(5,11,22,0.86) 42%, rgba(5,11,22,0.3) 60%, rgba(5,11,22,0) 70%); }
+  #copy { top: clamp(18px, 5vw, 30px); transform: none; width: auto; right: 22px; }
+  h1 { margin-top: 8px; }
+  h1 .big { font-size: clamp(30px, 9.5vw, 50px); }
+  h1 .the { font-size: clamp(12px, 3.5vw, 17px); margin-bottom: 5px; }
+  .eyebrow { font-size: clamp(11px, 3vw, 14px); }
+  .lede { font-size: clamp(13px, 3.6vw, 16px); line-height: 1.4; margin-top: 10px; }
+  .cta { margin-top: 12px; gap: 8px 10px; }
+  .btn { font-size: clamp(12px, 3.4vw, 15px); padding: 10px 13px 9px; }
+  .meta { font-size: clamp(11px, 2.9vw, 13px); }
+  #hud { display: none; }
+}
+@media (max-height: 300px) and (min-aspect-ratio: 5/4) { .lede { display: none; } }
+@media (prefers-reduced-motion: reduce) { #copy > * { animation: none; opacity: 1; transform: none; } #hud .blip { animation: none; } #c, #poster, #hud { transition: none; } }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="poster"></div>
+  <canvas id="c" aria-hidden="true"></canvas>
+  <div id="scrim"></div>
+  <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
+  <main id="copy">
+    <div class="eyebrow"><span>Extra credit</span><span class="pts">5 POINTS</span></div>
+    <h1><span class="the">The Battle of</span><span class="big">Embden</span></h1>
+    <p class="lede">Lead the strike team through <b>glycolysis</b>: ten steps from glucose to pyruvate, then take down the shield bunker.</p>
+    <div class="cta">
+      <a class="btn" href="https://neogio73.github.io/battle-of-embden-play/" target="_blank" rel="noopener">LAUNCH THE GAME
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9M8.5 4.5 12 8l-3.5 3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square"/></svg></a>
+      <span class="meta">Computer, tablet or phone</span>
+    </div>
+  </main>
+  <div id="hud" aria-hidden="true"><span class="blip"></span><span id="hud-text">PREPARATORY PHASE · STEPS 1–5</span></div>
+</div>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
+</script>
+<script>
+  // If WebGL isn't available (or the 3D scene never gets going), the still picture is shown instead.
+  setTimeout(() => { if (!document.body.classList.contains('live')) document.body.classList.add('poster'); }, 9000);
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+const V3 = THREE.Vector3;
+const Y = new V3(0, 1, 0);
+const params = new URLSearchParams(location.search);
+const CAPTURE = params.has('capture');   // test/recording mode: time only advances when asked
+const STILL = !CAPTURE && matchMedia('(prefers-reduced-motion: reduce)').matches;
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+const lerp = (a, b, t) => a + (b - a) * t;
+function mulberry(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+const rand = mulberry(20261014);
+const srgb = (r, g, b) => new THREE.Color().setRGB(r, g, b, THREE.SRGBColorSpace);
+
+// ---------- renderer, scene, camera ----------
+const canvas = document.getElementById('c');
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance', preserveDrawingBuffer: CAPTURE });
+} catch (err) { document.body.classList.add('poster'); throw err; }
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+const MIST = srgb(0.47, 0.58, 0.5);              // the game's mist (ForestArt.Mist)
+const scene = new THREE.Scene();
+scene.background = MIST.clone();
+scene.fog = new THREE.Fog(MIST.clone(), 22, 240);
+const camera = new THREE.PerspectiveCamera(30, 2, 0.3, 1500);
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+scene.environmentIntensity = 0.3;
+const sun = new THREE.DirectionalLight(srgb(1, 0.95, 0.84), 2.0);
+sun.position.set(-0.5, 1, 0.35).multiplyScalar(100);
+scene.add(sun, new THREE.HemisphereLight(srgb(0.8, 0.88, 0.82), srgb(0.28, 0.24, 0.17), 1.5));
+
+// ---------- textures drawn in code ----------
+function canvasTex(w, h, draw, repeat) {
+  const c = document.createElement('canvas'); c.width = w; c.height = h; draw(c.getContext('2d'), w, h);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+  if (repeat) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(...repeat); }
+  t.anisotropy = 4; return t;
+}
+function radial(stops, size = 128) {
+  return canvasTex(size, size, (x, w) => {
+    const g = x.createRadialGradient(w / 2, w / 2, 0, w / 2, w / 2, w / 2);
+    for (const [o, col] of stops) g.addColorStop(o, col);
+    x.fillStyle = g; x.fillRect(0, 0, w, w);
+  });
+}
+const barkTex = canvasTex(64, 256, (x, w, h) => {
+  const r = mulberry(7); x.fillStyle = '#6b4a35'; x.fillRect(0, 0, w, h);
+  for (let i = 0; i < 70; i++) { const px = r() * w, wd = 1 + r() * 4; x.fillStyle = r() < 0.5 ? `rgba(40,24,16,${0.25 + r() * 0.4})` : `rgba(150,110,80,${0.12 + r() * 0.2})`; x.fillRect(px, 0, wd, h); }
+  for (let i = 0; i < 40; i++) { x.fillStyle = `rgba(30,20,12,${0.15 + r() * 0.2})`; x.fillRect(r() * w, r() * h, 2 + r() * 6, 8 + r() * 30); }
+}, [3, 1]);
+const groundTex = canvasTex(256, 256, (x, w, h) => {
+  const r = mulberry(9); x.fillStyle = '#5a5236'; x.fillRect(0, 0, w, h);
+  for (let i = 0; i < 900; i++) { const g = 60 + r() * 50; x.fillStyle = r() < 0.55 ? `rgba(${g * 0.7 | 0},${g | 0},${g * 0.45 | 0},0.5)` : `rgba(${g + 20 | 0},${g * 0.8 | 0},${g * 0.5 | 0},0.45)`; x.beginPath(); x.arc(r() * w, r() * h, 1 + r() * 5, 0, 6.3); x.fill(); }
+}, [160, 160]);
+const TEX = {
+  flash: radial([[0, 'rgba(255,255,240,1)'], [0.2, 'rgba(255,240,190,0.9)'], [0.55, 'rgba(255,170,70,0.35)'], [1, 'rgba(0,0,0,0)']]),
+  fire: radial([[0, 'rgba(255,232,170,1)'], [0.3, 'rgba(255,145,45,0.85)'], [0.65, 'rgba(190,55,12,0.35)'], [1, 'rgba(0,0,0,0)']]),
+  smoke: radial([[0, 'rgba(70,72,66,0.85)'], [0.5, 'rgba(85,88,80,0.45)'], [1, 'rgba(90,95,85,0)']]),
+  spark: radial([[0, 'rgba(255,255,255,1)'], [0.4, 'rgba(255,200,120,0.8)'], [1, 'rgba(0,0,0,0)']], 32),
+  red: radial([[0, 'rgba(255,225,210,1)'], [0.35, 'rgba(255,70,45,0.65)'], [1, 'rgba(0,0,0,0)']], 64),
+  blue: radial([[0, 'rgba(230,248,255,1)'], [0.3, 'rgba(120,205,255,0.7)'], [1, 'rgba(0,0,0,0)']], 64),
+  shadow: radial([[0, 'rgba(0,0,0,0.55)'], [0.6, 'rgba(0,0,0,0.25)'], [1, 'rgba(0,0,0,0)']], 64),
+};
+TEX.shadow.colorSpace = THREE.NoColorSpace;
+const additive = (map, color = 0xffffff) => new THREE.SpriteMaterial({ map, color, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, toneMapped: false, fog: false });
+
+// ---------- the forest ----------
+// Four places in one forest, one for each shot, far apart. Each shot is laid out in its own frame: the camera near the
+// origin, looking down -Z. Corridors keep trees out of the action and out of the camera's line of sight.
+const SHOTS = [
+  { name: 'bikes', base: new V3(0, 0, 0), dur: 4.6, hud: 'PREPARATORY PHASE  ·  STEPS 1–5',
+    clear: [[0, 2, 0, 2, 4], [7.5, -230, 7.5, 30, 7]] },
+  { name: 'walker', base: new V3(500, 0, 0), dur: 6.6, hud: 'PAYOFF PHASE  ·  STEPS 6–10',
+    clear: [[0, 2, 0, 2, 6], [0, 0, 6, -30, 6], [2, -24, 10, -56, 9], [8, -48, 38, -80, 13]] },
+  { name: 'ewok', base: new V3(1000, 0, 0), dur: 2.8, hud: 'FRIENDLY EWOK SPOTTED',
+    clear: [[0, 1, 0, 1, 2.6], [0, 0, 3.4, -9, 1.6], [3.4, -9, 12, -7, 1.6]] },
+  { name: 'bunker', base: new V3(1500, 0, 0), dur: 6.0, hud: 'SHIELD GENERATOR ONLINE',
+    clear: [[0, 2, 0, 2, 6], [0, 0, 17, -100, 12], [17, -100, 17, -100, 30], [34, -120, 110, -230, 28], [44, -150, 44, -150, 8]] },
+];
+let acc = 0; for (const S of SHOTS) { S.start = acc; acc += S.dur; }
+const LOOP = acc;
+const segDist = (px, pz, [ax, az, bx, bz]) => {
+  const dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz, t = l2 ? clamp(((px - ax) * dx + (pz - az) * dz) / l2, 0, 1) : 0;
+  return Math.hypot(px - ax - t * dx, pz - az - t * dz);
+};
+const isClear = (S, x, z, pad = 0) => S.clear.every(c => segDist(x, z, c) > c[4] + pad);
+{
+  const trunkGeo = new THREE.CylinderGeometry(0.86, 1, 1, 14, 1, true); trunkGeo.translate(0, 0.5, 0);
+  const flareGeo = new THREE.CylinderGeometry(1.05, 1.5, 1, 14, 1, true); flareGeo.translate(0, 0.5, 0);
+  const barkMat = new THREE.MeshStandardMaterial({ map: barkTex, roughness: 0.95, metalness: 0 });
+  const leafGeo = new THREE.IcosahedronGeometry(1, 3);
+  const leafMat = new THREE.MeshStandardMaterial({ color: srgb(0.15, 0.3, 0.15), roughness: 1 });
+  const trees = [], boughs = [];
+  for (const S of SHOTS) {
+    for (let i = 0, n = 0; i < 900 && n < 120; i++) {
+      const x = -150 + rand() * 300, z = -280 + rand() * 300, r = 1.0 + rand() * 1.7;
+      if (!isClear(S, x, z, r + 1) || trees.some(t => t.S === S && Math.hypot(t.x - x, t.z - z) < t.r + r + 4)) continue;
+      trees.push({ S, x, z, r, h: 80 + rand() * 50, shade: 0.75 + rand() * 0.45 }); n++;
+      for (let k = 0, m = 1 + Math.floor(rand() * 3); k < m; k++) { const a = rand() * 6.28, w = 7 + rand() * 9; boughs.push({ S, x: x + Math.cos(a) * 2, y: 40 + rand() * 45, z: z + Math.sin(a) * 2, w, shade: 0.75 + rand() * 0.5 }); }
+    }
+  }
+  const trunks = new THREE.InstancedMesh(trunkGeo, barkMat, trees.length), flares = new THREE.InstancedMesh(flareGeo, barkMat, trees.length);
+  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new V3(), p = new V3(), c = new THREE.Color();
+  trees.forEach((t, i) => {
+    q.setFromAxisAngle(Y, rand() * 6.28);
+    trunks.setMatrixAt(i, m.compose(p.set(t.x, 0, t.z).add(t.S.base), q, s.set(t.r, t.h, t.r)));
+    flares.setMatrixAt(i, m.compose(p, q, s.set(t.r, 2.4, t.r)));
+    c.setRGB(t.shade, t.shade * 0.97, t.shade * 0.94); trunks.setColorAt(i, c); flares.setColorAt(i, c.multiplyScalar(0.8));
+  });
+  const leaves = new THREE.InstancedMesh(leafGeo, leafMat, boughs.length);
+  boughs.forEach((b, i) => { leaves.setMatrixAt(i, m.compose(p.set(b.x, b.y, b.z).add(b.S.base), q.setFromAxisAngle(Y, rand() * 6), s.set(b.w, b.w * 0.6, b.w))); leaves.setColorAt(i, c.setScalar(b.shade)); });
+  scene.add(trunks, flares, leaves);
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(3200, 1200), new THREE.MeshStandardMaterial({ map: groundTex, color: srgb(0.78, 0.8, 0.7), roughness: 1 }));
+  ground.rotation.x = -Math.PI / 2; ground.position.set(750, 0, -150); scene.add(ground);
+}
+// Ferns: a clump of curved fronds, drawn as instanced geometry; many crowd the edges of each shot.
+function fernGeometry() {
+  const pos = [], col = [], idx = [], blades = 9, segs = 5;
+  for (let b = 0; b < blades; b++) {
+    const a = (b + 0.3 * Math.sin(b * 2.3)) / blades * Math.PI * 2, len = 0.8 + 0.25 * Math.sin(b * 1.7), lift = 0.75 + 0.2 * Math.cos(b * 2.9);
+    const dx = Math.cos(a), dz = Math.sin(a), px = -dz, pz = dx, start = pos.length / 3;
+    for (let k = 0; k <= segs; k++) {
+      const u = k / segs, w = 0.17 * Math.sin(Math.PI * Math.min(1, u * 1.15)) + 0.01, r = u * len, y = lift * (u * 1.2 - u * u * 0.95);
+      pos.push(dx * r - px * w, y, dz * r - pz * w, dx * r + px * w, y + 0.02, dz * r + pz * w);
+      const g = 0.45 + 0.55 * u; col.push(0.13 * g, 0.3 * g, 0.12 * g, 0.16 * g, 0.36 * g, 0.13 * g);
+      if (k < segs) { const i = start + k * 2; idx.push(i, i + 1, i + 2, i + 1, i + 3, i + 2); }
+    }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  g.setIndex(idx); g.computeVertexNormals(); return g;
+}
+const fernMat = new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: 0.9 });
+const FERNS = [];
+function fern(S, x, z, size, yaw = rand() * 6.28) { FERNS.push({ p: new V3(x, 0, z).add(S.base), size, yaw }); }
+for (const S of SHOTS) for (let i = 0, n = 0; i < 1400 && n < 190; i++) {
+  const x = -60 + rand() * 120, z = -160 + rand() * 170;
+  if (!isClear(S, x, z, -1.2) && rand() < 0.85) continue;
+  if (S.clear.some(c => segDist(x, z, c) < c[4] - 2.5)) continue;
+  fern(S, x, z, 1.2 + rand() * 2.2); n++;
+}
+// a clump close in front of the Ewok, which it hides behind
+{ const S = SHOTS[2]; fern(S, 3.2, -8.1, 1.7, 0.4); fern(S, 4.1, -8.4, 1.5, 2.1); fern(S, 2.4, -8.6, 1.3, 4); fern(S, 5.4, -9.4, 1.6, 1); fern(S, 1.2, -6.4, 1.4, 3); }
+{
+  const ferns = new THREE.InstancedMesh(fernGeometry(), fernMat, FERNS.length);
+  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new V3();
+  FERNS.forEach((f, i) => ferns.setMatrixAt(i, m.compose(f.p, q.setFromAxisAngle(Y, f.yaw), s.setScalar(f.size))));
+  scene.add(ferns);
+}
+// soft dark patches under things that stand on the ground
+const shadowMat = new THREE.MeshBasicMaterial({ map: TEX.shadow, transparent: true, depthWrite: false, color: 0x000000, opacity: 1 });
+shadowMat.alphaMap = TEX.shadow;
+function groundShadow(w, d) { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d), shadowMat); m.rotation.x = -Math.PI / 2; m.position.y = 0.04; m.renderOrder = 1; scene.add(m); return m; }
+
+// ---------- models ----------
+const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
+// The models are stored scrambled (Tools/banner/lite_models.mjs), so none of the published files is a loose model file.
+const KEY = 0x45d8a1c3;
+async function unpack(url) {
+  const r = await fetch(url); if (!r.ok) throw new Error(url + ' ' + r.status);
+  const b = new Uint8Array(await r.arrayBuffer()); let x = KEY;
+  for (let i = 0; i < b.length; i++) { x ^= x << 13; x ^= x >>> 17; x ^= x << 5; b[i] ^= x & 255; }
+  return b.buffer;
+}
+const load = url => unpack(url).then(buf => new Promise((res, rej) => loader.parse(buf, '', res, rej)));
+// Scale a model so its height (or length) is `size`, centre it over the origin and stand it on the ground.
+function fit(root, size, by = 'y', ground = true) {
+  root.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(root, true), dims = box.getSize(new V3()), c = box.getCenter(new V3());
+  const k = size / (by === 'y' ? dims.y : Math.max(dims.x, dims.z));
+  root.position.set(-c.x, ground ? -box.min.y : -c.y, -c.z);
+  const holder = new THREE.Group(); holder.add(root); holder.scale.setScalar(k);
+  const outer = new THREE.Group(); outer.add(holder); scene.add(outer);
+  return { obj: outer, dims: dims.multiplyScalar(k) };
+}
+const findNode = (root, ...names) => { let hit = null; root.traverse(o => { if (!hit && names.includes(o.name)) hit = o; }); return hit; };
+const walker = { obj: null, mixer: null, walk: null, gun: null, clip: 1, stride: 5.31, shadow: null };
+const bikes = [{ obj: null }, { obj: null }];
+const ewok = { obj: null };
+const bunker = { obj: null, ruin: null };
+const falcon = { obj: null, glow: null, mats: [] };
+
+// ---------- effects: bolts, bursts, the bunker blast ----------
+const boltCore = new THREE.MeshBasicMaterial({ color: srgb(1, 0.55, 0.45), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false, fog: false });
+const boltHalo = new THREE.MeshBasicMaterial({ color: srgb(1, 0.15, 0.08), transparent: true, opacity: 0.45, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false, fog: false });
+const bolts = Array.from({ length: 4 }, () => {
+  const g = new THREE.Group();
+  const a = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 4.2, 6).rotateX(Math.PI / 2), boltCore);
+  const b = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.26, 4.8, 8).rotateX(Math.PI / 2), boltHalo);
+  g.add(a, b); g.visible = false; scene.add(g); return g;
+});
+const muzzle = new THREE.Sprite(additive(TEX.red)); muzzle.visible = false; scene.add(muzzle);
+// A burst is a pure function of the time since it went off, so every frame can be drawn from the clock alone.
+function makeBurst(size, sparks, debris, smokes) {
+  const g = new THREE.Group(); g.visible = false; scene.add(g);
+  const flash = new THREE.Sprite(additive(TEX.flash)), fire = [0, 1, 2, 3].map(() => new THREE.Sprite(additive(TEX.fire)));
+  const smoke = Array.from({ length: smokes }, () => new THREE.Sprite(new THREE.SpriteMaterial({ map: TEX.smoke, transparent: true, depthWrite: false, fog: true })));
+  const sg = new THREE.BufferGeometry(); sg.setAttribute('position', new THREE.BufferAttribute(new Float32Array(sparks * 3), 3));
+  const sp = new THREE.Points(sg, new THREE.PointsMaterial({ map: TEX.spark, color: 0xffc070, size: size * 0.06, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false, fog: false }));
+  sp.frustumCulled = false;
+  const dGeo = new THREE.TetrahedronGeometry(size * 0.03, 0), dMat = new THREE.MeshStandardMaterial({ color: 0x3b3a36, roughness: 0.8, metalness: 0.2 });
+  const bits = Array.from({ length: debris }, () => new THREE.Mesh(dGeo, dMat));
+  g.add(flash, ...fire, ...smoke, sp, ...bits);
+  const r = mulberry(Math.floor(size * 1000) + sparks);
+  const sv = Array.from({ length: sparks }, () => new V3(r() - 0.5, r() * 0.8 - 0.15, r() - 0.5).normalize().multiplyScalar(size * (0.9 + r() * 2.2)));
+  const dv = bits.map(() => new V3(r() - 0.5, 0.4 + r() * 0.8, r() - 0.5).normalize().multiplyScalar(size * (0.35 + r() * 0.6)));
+  const fo = fire.map(() => new V3(r() - 0.5, r() * 0.6, r() - 0.5).multiplyScalar(size * 0.35));
+  const so = smoke.map(() => new V3(r() - 0.5, r() * 0.3, r() - 0.5).multiplyScalar(size * 0.6));
+  return { g, size, show(t) {
+    g.visible = t >= 0 && t < 6;
+    if (!g.visible) return;
+    flash.scale.setScalar(size * (0.6 + 2.4 * smooth(0, 0.1, t))); flash.material.opacity = 1 - smooth(0.04, 0.4, t);
+    fire.forEach((f, i) => { const tt = t - i * 0.06; f.position.copy(fo[i]).multiplyScalar(0.4 + smooth(0, 1, tt)); f.scale.setScalar(size * (0.4 + 1.3 * Math.sqrt(smooth(0, 1.1, tt)))); f.material.opacity = tt < 0 ? 0 : 0.95 * (1 - smooth(0.25, 1.5, tt)); });
+    smoke.forEach((s, i) => { const tt = t - 0.15 - i * 0.12; s.position.copy(so[i]).addScaledVector(Y, size * 0.45 * Math.max(0, tt)); s.scale.setScalar(size * (0.6 + 0.55 * Math.max(0, tt))); s.material.opacity = tt < 0 ? 0 : 0.7 * smooth(0, 0.4, tt) * (1 - smooth(2.2, 5.5, tt)); });
+    const pos = sp.geometry.attributes.position, k = (1 - Math.exp(-1.8 * t)) / 1.8;
+    sv.forEach((v, i) => pos.setXYZ(i, v.x * k, v.y * k - 4.9 * t * t * 0.25, v.z * k)); pos.needsUpdate = true;
+    sp.material.opacity = 1 - smooth(0.5, 1.6, t);
+    bits.forEach((b, i) => { const v = dv[i], y = v.y * t - 9.8 * t * t; b.visible = t < 2.5 && y > -2.5; b.position.set(v.x * t, y, v.z * t); b.rotation.set(t * 7 + i, t * 5, t * 3); });
+  } };
+}
+const pylonBurst = makeBurst(7, 60, 9, 4);
+const bunkerBursts = [makeBurst(10, 80, 8, 6), makeBurst(8, 50, 5, 5), makeBurst(12, 90, 8, 7)];
+// three shield pylons, like the game's targets A, B and C; the walker fires at the right one
+const PYLONS = [];
+{
+  const steel = new THREE.MeshStandardMaterial({ color: srgb(0.24, 0.26, 0.28), roughness: 0.6, metalness: 0.5 });
+  const colors = [srgb(0.23, 0.86, 0.92), srgb(1, 0.76, 0.3), srgb(0.74, 0.6, 1)];
+  for (let i = 0; i < 3; i++) {
+    const g = new THREE.Group();
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(2.1, 2.3, 0.8, 18), steel); base.position.y = 0.4;
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 10.8, 12), steel); pole.position.y = 5.4;
+    const head = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 12), new THREE.MeshStandardMaterial({ color: colors[i].clone().multiplyScalar(0.5), emissive: colors[i], emissiveIntensity: 0.6, roughness: 0.4 }));
+    head.scale.set(2.4, 2.4, 0.85); head.position.y = 10.8;
+    const ringMat = new THREE.MeshBasicMaterial({ color: colors[i], transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false, fog: false });
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(3.3, 0.16, 8, 48), ringMat); ring.position.y = 10.8;
+    g.add(base, pole, head, ring); scene.add(g);
+    PYLONS.push({ g, head, ring, parts: [pole, head, ring] });
+  }
+}
+const beam = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.6, 700, 16, 1, true),
+  new THREE.MeshBasicMaterial({ color: srgb(0.55, 0.85, 1), transparent: true, opacity: 0.32, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false, fog: false, side: THREE.DoubleSide }));
+scene.add(beam);
+// a full-view veil: mist between shots, a warm white for the blast
+const veil = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.MeshBasicMaterial({ color: MIST.clone(), transparent: true, opacity: 0, depthTest: false, depthWrite: false, fog: false, toneMapped: false }));
+veil.renderOrder = 999; veil.position.z = -0.5; camera.add(veil); scene.add(camera);
+
+// ---------- layout: the drawing follows the banner's real size ----------
+let wide = true, sizeW = 0, sizeH = 0;
+// Fit the drawing to the banner's real size. D2L can load the banner while the announcement is still folded
+// shut (no size yet) and open it later without telling the page, so this is checked on every frame too.
+function layout() {
+  const w = Math.round(document.documentElement.clientWidth || innerWidth), h = Math.round(document.documentElement.clientHeight || innerHeight);
+  if (w < 16 || h < 16) return false;   // not shown yet; keep checking
+  const ratio = Math.min(window.devicePixelRatio || 1, w * h > 900000 ? 1.25 : 1.75);
+  if (w === sizeW && h === sizeH && renderer.getPixelRatio() === ratio) return false;
+  sizeW = w; sizeH = h;
+  wide = w / h >= 1.25;
+  renderer.setPixelRatio(ratio);
+  renderer.setSize(w, h, false);
+  // the aim point sits right of centre beside the words, or low in the frame when the words are on top
+  const fw = wide ? w * 1.3 : w, fh = wide ? h : h * 1.55;
+  camera.setViewOffset(fw, fh, 0, 0, w, h);
+  camera.aspect = fw / fh;
+  const hfov = wide ? 62 : 50;
+  camera.fov = clamp(2 * Math.atan(Math.tan(hfov * Math.PI / 360) / camera.aspect) * 180 / Math.PI, 18, 78);
+  camera.updateProjectionMatrix();
+  return true;
+}
+
+// ---------- the shots ----------
+const _a = new V3(), _b = new V3(), _c = new V3(), _look = new V3(), _hero = new V3(), _tmp = new V3();
+const W = (S, x, y, z, out = new V3()) => out.set(x, y, z).add(S.base);
+const hudEl = document.getElementById('hud'), hudText = document.getElementById('hud-text');
+let hudShown = '';
+function hud(text, alert) { if (text !== hudShown) { hudShown = text; hudText.textContent = text; } hudEl.classList.toggle('alert', !!alert); }
+function orientAlong(obj, vel, bank = 0) {
+  const yaw = Math.atan2(vel.x, vel.z), pitch = -Math.atan2(vel.y, Math.hypot(vel.x, vel.z));
+  obj.rotation.set(pitch, yaw, bank, 'YXZ');
+}
+// bikes: out of the mist, straight at the camera's right shoulder, weaving
+function bikeAt(i, u, out) {
+  const t = u - i * 0.6, z = -92 + 29 * t, x = 7.5 + (i ? -2.4 : 0.6) + 1.6 * Math.sin(t * 1.9 + i * 1.3);
+  return out.set(x, 1.7 + 0.18 * Math.sin(t * 6 + i), z);
+}
+function shotBikes(S, u) {
+  for (let i = 0; i < 2; i++) {
+    const B = bikes[i]; if (!B.obj) continue;
+    bikeAt(i, u, _a); bikeAt(i, u + 0.05, _b);
+    const vel = _b.sub(_a).multiplyScalar(20), bank = -0.35 * Math.cos((u - i * 0.6) * 1.9 + i * 1.3);
+    B.obj.position.copy(_a).add(S.base); orientAlong(B.obj, vel, bank); B.obj.visible = _a.z < 6;
+    if (B.shadow) { B.shadow.position.set(B.obj.position.x, 0.04, B.obj.position.z); B.shadow.visible = B.obj.visible; }
+  }
+  bikeAt(0, u, _hero).add(S.base);
+  W(S, 0.4 * Math.sin(u * 0.6), 2.0, 2, camera.position);
+  W(S, 3.6, 2.0, -45, _look);
+  return _hero;
+}
+// the walker strides toward the pylons and fires at the right one (B, gold)
+const WALK_DIR = new V3(0.27, 0, -1).normalize(), WALK_SPEED = 2.2, FIRE_AT = 2.0, BOLT_TIME = 0.42;
+function shotWalker(S, u) {
+  const dist = 2 + WALK_SPEED * u;
+  W(S, 1, 0, -24, _a).addScaledVector(WALK_DIR, dist);
+  if (walker.obj) {
+    walker.obj.position.copy(_a); walker.obj.rotation.set(0, Math.atan2(WALK_DIR.x, WALK_DIR.z), 0);
+    if (walker.mixer) walker.mixer.setTime((dist / walker.stride) * walker.clip);
+    walker.obj.updateMatrixWorld(true);
+    if (walker.shadow) walker.shadow.position.set(_a.x, 0.04, _a.z);
+  }
+  PYLONS.forEach((P, i) => { W(S, 19 + i * 9, 0, -84 + i * 5, P.g.position); P.g.rotation.y = Math.atan2(-WALK_DIR.x, -WALK_DIR.z); });
+  const target = PYLONS[1], hitAt = FIRE_AT + BOLT_TIME, hit = u >= hitAt;
+  target.parts.forEach(p => { p.visible = !hit; });
+  PYLONS.forEach((P, i) => { P.ring.material.opacity = i === 1 ? 1 : 0.55 + 0.45 * smooth(hitAt, hitAt + 0.6, u) * 0; });
+  // twin bolts
+  const from = walker.gun ? walker.gun.getWorldPosition(_b) : _b.copy(_a).add(_tmp.set(0, 6.5, 0));
+  const to = _c.copy(target.g.position).add(_tmp.set(0, 10.8, 0));
+  bolts.forEach((g, k) => {
+    const t0 = FIRE_AT + (k % 2) * 0.12, f = (u - t0) / BOLT_TIME;
+    g.visible = k < 2 && f >= 0 && f < 1;
+    if (!g.visible) return;
+    g.position.lerpVectors(from, to, f).add(_tmp.set(k ? 0.6 : -0.6, 0, 0)); g.lookAt(to);
+  });
+  muzzle.visible = u >= FIRE_AT && u < FIRE_AT + 0.1 || u >= FIRE_AT + 0.12 && u < FIRE_AT + 0.22;
+  if (muzzle.visible) { muzzle.position.copy(from); muzzle.scale.setScalar(2.6); }
+  pylonBurst.g.position.copy(to); pylonBurst.show(u - hitAt);
+  hud(hit ? 'TARGET B  ·  CORRECT' : S.hud, false);
+  W(S, -2.5 + 0.3 * u, 3.4, 0, camera.position);
+  _look.copy(_a).add(_tmp.set(0, 5.4, 0)).lerp(_c, 0.3);
+  return _hero.copy(_a).add(_tmp.set(0, 5, 0));
+}
+// an Ewok rises from the ferns, looks about, and scampers off to the right
+function shotEwok(S, u) {
+  const rise = smooth(0.15, 0.7, u), go = smooth(1.7, 2.7, u);
+  W(S, 3.4 + 7 * go, -1.25 * (1 - rise) + 0.22 * Math.abs(Math.sin(go * 14)) * (go > 0 && go < 1 ? 1 : 0), -9 + 1.5 * go, _a);
+  if (ewok.obj) {
+    ewok.obj.position.copy(_a);
+    ewok.obj.rotation.set(0, go > 0.02 ? Math.PI / 2 - 0.2 : 0.35 * Math.sin(u * 3.2) - 0.1, go > 0.02 ? -0.1 : 0);
+  }
+  W(S, 0, 1.15, 0, camera.position);
+  W(S, 3.6 + 1.2 * go, 0.75, -9, _look);
+  return _hero.copy(_a).add(_tmp.set(0, 0.7, 0));
+}
+// the charges go off at the bunker door, the shield beam goes out, and the Falcon climbs away
+const BLAST = 1.4, FALCON_IN = 1.75;
+function falconAt(u, out) {
+  const t = Math.max(0, u - FALCON_IN), k = t * t;
+  return out.set(22 + 7 * t + 2.2 * k, 6 + 9 * t + 2.4 * k, -112 - 10 * t - 2.6 * k);
+}
+function shotBunker(S, u) {
+  const blown = u >= BLAST + 0.35;
+  if (bunker.obj) { W(S, 17, 0, -100, bunker.obj.position); bunker.obj.visible = !blown; }
+  if (bunker.ruin) { bunker.ruin.position.copy(bunker.obj.position); bunker.ruin.visible = blown; }
+  W(S, 44, 0, -150, beam.position); beam.position.y = 350;
+  beam.material.opacity = 0.32 * (1 - smooth(BLAST + 0.2, BLAST + 0.9, u)) * (0.9 + 0.1 * Math.sin(u * 23));
+  const door = W(S, 17, 3, -88, _c);
+  bunkerBursts[0].g.position.copy(door); bunkerBursts[0].show(u - BLAST);
+  bunkerBursts[1].g.position.copy(door).add(_tmp.set(-5, 5, -6)); bunkerBursts[1].show(u - BLAST - 0.22);
+  bunkerBursts[2].g.position.copy(door).add(_tmp.set(5, 8, -10)); bunkerBursts[2].show(u - BLAST - 0.45);
+  if (falcon.obj) {
+    falconAt(u, _a); falconAt(u + 0.05, _b);
+    falcon.obj.visible = u >= FALCON_IN;
+    const fade = smooth(FALCON_IN, FALCON_IN + 0.5, u);   // it comes out of the fireball
+    for (const m of falcon.mats) { m.opacity = fade; m.transparent = fade < 1; m.depthWrite = fade > 0.5; }
+    falcon.obj.position.copy(_a).add(S.base); orientAlong(falcon.obj, _b.sub(_a), -0.35);
+    if (falcon.glow) falcon.glow.material.opacity = 0.8 + 0.2 * Math.sin(u * 37);
+  }
+  hud(u < BLAST ? S.hud : u < FALCON_IN + 0.6 ? 'SHIELD DOWN' : 'SHIELD DOWN  ·  PYRUVATE ABOARD THE FALCON', u < BLAST);
+  const shake = Math.max(0, 1 - (u - BLAST) / 0.9) * (u > BLAST ? 0.5 : 0);
+  W(S, 0.6 * u + shake * Math.sin(u * 71), 5 + shake * Math.sin(u * 53), 0, camera.position);
+  const follow = smooth(FALCON_IN + 0.6, FALCON_IN + 3.2, u);
+  W(S, 19, 7, -100, _look).lerp(falconAt(u, _b).add(S.base), follow * 0.8);
+  return u >= FALCON_IN + 1.0 ? _hero.copy(falcon.obj ? falcon.obj.position : _look) : W(S, 19, 7, -100, _hero);
+}
+const SHOT_FN = { bikes: shotBikes, walker: shotWalker, ewok: shotEwok, bunker: shotBunker };
+
+// ---------- one frame, as a function of the clock ----------
+let simT = 0;
+const _ndc = new V3();
+function step(dt) {
+  simT += dt;
+  const t = ((simT % LOOP) + LOOP) % LOOP;
+  const S = SHOTS.find(s => t >= s.start && t < s.start + s.dur) || SHOTS[0], u = t - S.start;
+  // only the current shot's actors are shown
+  for (const B of bikes) if (B.obj) { B.obj.visible = false; if (B.shadow) B.shadow.visible = false; }
+  if (walker.obj) walker.obj.visible = S.name === 'walker';
+  if (walker.shadow) walker.shadow.visible = S.name === 'walker';
+  PYLONS.forEach(P => { P.g.visible = S.name === 'walker'; });
+  bolts.forEach(g => { g.visible = false; }); muzzle.visible = false; pylonBurst.g.visible = false;
+  if (ewok.obj) ewok.obj.visible = S.name === 'ewok';
+  if (bunker.obj) bunker.obj.visible = false; if (bunker.ruin) bunker.ruin.visible = false;
+  beam.visible = S.name === 'bunker'; bunkerBursts.forEach(b => { b.g.visible = false; });
+  if (falcon.obj) falcon.obj.visible = false;
+  if (S.name !== 'walker' && S.name !== 'bunker') hud(S.hud, false);
+  const hero = SHOT_FN[S.name](S, u);
+  if (S.name !== 'bunker') { if (bunker.obj) bunker.obj.visible = false; }
+  camera.lookAt(_look);
+  // keep the action clear of the words: turn the camera a little whenever the hero drifts toward them
+  camera.updateMatrixWorld();
+  _ndc.copy(hero).project(camera);
+  const lo = wide ? 0.12 : -0.7, hi = wide ? 0.9 : 0.7, ylo = wide ? -0.8 : -0.95, yhi = wide ? 0.8 : -0.3;
+  const ex = _ndc.x < lo ? lo - _ndc.x : _ndc.x > hi ? hi - _ndc.x : 0, ey = _ndc.y < ylo ? ylo - _ndc.y : _ndc.y > yhi ? yhi - _ndc.y : 0;
+  if (_ndc.z < 1 && (ex || ey)) {
+    const hx = Math.atan(Math.tan(camera.fov * Math.PI / 360) * camera.aspect) * (camera.view ? camera.view.width / camera.view.fullWidth : 1);
+    const hy = camera.fov * Math.PI / 360 * (camera.view ? camera.view.height / camera.view.fullHeight : 1);
+    camera.rotateOnWorldAxis(Y, ex * hx);
+    camera.rotateX(-ey * hy);
+    camera.updateMatrixWorld();
+  }
+  // mist between shots; a warm white for the blast
+  const edge = Math.min(u, S.dur - u), cut = 1 - smooth(0, 0.35, edge);
+  const white = S.name === 'bunker' ? Math.max(0, 1 - Math.abs(u - BLAST - 0.06) / 0.28) * 0.75 : 0;
+  veil.material.color.copy(MIST).lerp(_white, white > cut ? 1 : 0);
+  veil.material.opacity = Math.max(cut, white);
+}
+const _white = srgb(1, 0.93, 0.8);
+
+// ---------- load, then run ----------
+layout();
+const relayout = () => { if (layout() && !running && document.body.classList.contains('live')) { step(0); renderer.render(scene, camera); } };
+addEventListener('resize', relayout);
+if ('ResizeObserver' in window) new ResizeObserver(relayout).observe(document.documentElement);
+const ready = Promise.all([
+  load('atst.bin').then(gltf => {
+    const root = gltf.scene;
+    root.traverse(o => { if (o.isMesh) { o.frustumCulled = false; } });
+    const head = findNode(root, 'Head'), gun = findNode(root, 'Gun_Main', 'Gun Main');
+    const { obj } = fit(root, 9);
+    // the model's front is +Z; turn it round if its gun points the other way (as the game does)
+    obj.updateMatrixWorld(true);
+    if (head && gun && gun.getWorldPosition(new V3()).z < head.getWorldPosition(new V3()).z) obj.children[0].rotation.y = Math.PI;
+    walker.obj = obj; walker.gun = gun;
+    const clip = gltf.animations.find(a => /Walk/i.test(a.name));
+    if (clip) { walker.mixer = new THREE.AnimationMixer(root); walker.walk = walker.mixer.clipAction(clip); walker.walk.play(); walker.clip = clip.duration; }
+    walker.shadow = groundShadow(9, 9);
+  }),
+  load('bike.bin').then(gltf => {
+    bikes.forEach((B, i) => { const { obj } = fit(i ? gltf.scene.clone(true) : gltf.scene, 4.6, 'xz', false); B.obj = obj; B.shadow = groundShadow(3, 5); });
+  }),
+  load('ewok.bin').then(gltf => { ewok.obj = fit(gltf.scene, 1.4).obj; }),
+  load('bunker.bin').then(gltf => {
+    const { obj } = fit(gltf.scene, 34, 'xz'); bunker.obj = obj;
+    // what is left after the blast: the same shape, low and scorched
+    const ruin = obj.clone(true); ruin.scale.set(1, 0.32, 1);
+    ruin.traverse(o => { if (o.isMesh) { o.material = o.material.clone(); o.material.color.multiplyScalar(0.18); o.material.emissive?.setScalar(0); } });
+    scene.add(ruin); bunker.ruin = ruin;
+  }),
+  load('falcon.bin').then(gltf => {
+    const { obj, dims } = fit(gltf.scene, 34, 'xz', false);
+    const glow = new THREE.Sprite(additive(TEX.blue, 0x9fdcff));
+    glow.position.set(0, 0.3, -dims.z / 2 - 0.6); glow.scale.set(dims.x * 0.75, dims.y * 1.3, 1);
+    obj.add(glow); falcon.glow = glow; falcon.obj = obj;
+    obj.traverse(o => { if (o.isMesh) { o.material.fog = false; falcon.mats.push(o.material); } });
+  }),
+]);
+let last = 0, running = false, visible = true, raf = 0;
+function frame(now) {
+  raf = 0;
+  if (!running) return;
+  const dt = Math.min(0.05, (now - last) / 1000 || 0.016); last = now;
+  layout();
+  try { step(dt); renderer.render(scene, camera); } catch (err) { console.error(err); }   // one bad frame never stops the show
+  raf = requestAnimationFrame(frame);
+}
+function setRunning(on) {
+  on = on && visible && !document.hidden && !STILL && !CAPTURE;
+  if (on === running) return;
+  running = on;
+  if (on) { last = performance.now(); if (!raf) raf = requestAnimationFrame(frame); }
+}
+const STILL_AT = SHOTS[1].start + FIRE_AT + 0.2;   // the still picture: the walker's bolts on their way to target B
+const START = +(params.get('t') || (STILL ? STILL_AT : 0));
+ready.then(() => {
+  simT = START; step(0);
+  renderer.compile(scene, camera);
+  renderer.render(scene, camera);
+  document.body.classList.add('live'); document.body.classList.remove('poster');
+  if (!STILL && !CAPTURE) setRunning(true);
+  // pause whenever the banner is scrolled out of view or the tab is hidden, to spare laptops and phones
+  if ('IntersectionObserver' in window) new IntersectionObserver(es => { visible = es[es.length - 1].isIntersecting; relayout(); setRunning(true); }).observe(canvas);
+  document.addEventListener('visibilitychange', () => setRunning(true));
+}).catch(err => { console.error(err); document.body.classList.add('poster'); });
+
+if (CAPTURE) {
+  // for recording a preview: advance the clock in fixed steps, then draw
+  const ndc = p => { const v = p.clone().project(camera); return [+v.x.toFixed(2), +v.y.toFixed(2)]; };
+  window.__banner = { ready, loop: LOOP, still: STILL_AT,
+    advance(sec, fps = 30, draw = true) { const n = Math.round(sec * fps); for (let i = 0; i < n; i++) step(1 / fps); if (draw) { layout(); step(0); renderer.render(scene, camera); } return simT; },
+    seek(t) { simT = t; layout(); step(0); renderer.render(scene, camera); return simT; },
+    time: () => simT,
+    proj: () => { const t = ((simT % LOOP) + LOOP) % LOOP, S = SHOTS.find(s => t >= s.start && t < s.start + s.dur) || SHOTS[0]; return { t: +t.toFixed(2), shot: S.name, hero: ndc(SHOT_FN[S.name](S, t - S.start)) }; },
+    size: () => ({ css: [sizeW, sizeH], buffer: [renderer.domElement.width, renderer.domElement.height] }) };
+}
+</script>
+</body>
+</html>

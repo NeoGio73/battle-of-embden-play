@@ -1,0 +1,16 @@
+{
+  "name": "The Battle of Embden",
+  "short_name": "Embden",
+  "description": "A glycolysis review game on the forest moon of Endor.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#050b16",
+  "theme_color": "#050b16",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

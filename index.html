@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#050b16">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Embden">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap">
+  <title>The Battle of Embden</title>
+  <style>
+    :root{color-scheme:dark;--ink:#050b16;--panel:#0b1728;--line:#223a51;--cyan:#52e9e0;--gold:#f4c36a;--muted:#a6bccf}
+    *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--ink);color:#f3f9ff;font-family:Arial,Helvetica,sans-serif}
+    body{display:flex;flex-direction:column}header{flex:none;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);gap:16px;background:#07111e;flex-wrap:wrap}
+    .identity{min-width:210px;flex:1}.brand{font-size:12px;letter-spacing:2px;font-weight:bold}.brand b{color:var(--cyan)}.toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    #save-status{font-size:12px;color:var(--muted);line-height:1.45;margin-top:5px}#save-status[data-warning=true]{color:var(--gold)}
+    button{font:700 12px Arial,sans-serif;color:#e9fbff;background:#12293c;border:1px solid #3c6c83;border-radius:7px;padding:10px 12px;cursor:pointer;white-space:nowrap}
+    button:hover{background:#1e3c50;border-color:var(--cyan)}button:disabled{opacity:.45;cursor:default}button:focus-visible{outline:3px solid var(--gold);outline-offset:3px}.primary{background:var(--cyan);color:#052225;border-color:var(--cyan)}.primary:hover{background:#8efff6}
+    main{position:relative;flex:1;min-height:0;width:100%;background:var(--ink)}#unity-canvas{display:block;width:100%;height:100%;background:var(--ink);outline:none}
+    #loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 55%,#10303e 0%,#081525 40%,#050b16 75%);padding:24px}
+    .load-card{width:470px;text-align:center}.eyebrow{font-size:10px;letter-spacing:3px;color:var(--cyan);font-weight:bold;margin:22px 0 15px}.load-card h1{font-size:46px;line-height:1.03;letter-spacing:-1.8px;margin:0 0 16px}.load-card h1 span{color:var(--cyan)}
+    .load-card p{color:var(--muted);font-size:14px;line-height:1.6;margin:0}.cycle{width:96px;height:96px;margin:auto;color:var(--cyan)}.cycle svg{width:100%;height:100%;filter:drop-shadow(0 0 16px #39dace44)}
+    .progress{height:4px;border-radius:3px;background:#1b3347;overflow:hidden;margin:28px 0 12px}.progress span{display:block;width:0;height:100%;background:linear-gradient(90deg,var(--cyan),var(--gold));transition:width .2s}
+    #loading-label{font-size:11px;letter-spacing:1px;color:var(--muted)}.fine{margin-top:22px!important;font-size:12px!important;color:#8ca4bc!important}
+    dialog{max-width:580px;width:calc(100% - 32px);max-height:85vh;overflow:auto;border:1px solid #31566c;border-radius:14px;background:#0b192a;color:#f3f9ff;padding:26px;box-shadow:0 25px 100px #000a}dialog::backdrop{background:#020812bc}
+    dialog h2{margin:0 0 14px;font-size:24px}dialog p{font-size:14px;line-height:1.65;color:#b9cddd;white-space:pre-line}.dialog-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}#import-error,#load-error{color:var(--gold);font-size:13px;line-height:1.6}#load-error{margin:22px auto 0}#retry{margin:18px auto 0}[hidden]{display:none!important}
+    footer{flex:none;padding:7px 18px;border-top:1px solid var(--line);font-size:11px;color:var(--muted);line-height:1.4;text-align:center}
+    @media(max-width:720px){header{padding:10px 12px;gap:9px}.identity{flex-basis:100%}.brand{font-size:10px}.toolbar{gap:6px}button{font-size:11px;padding:9px}.load-card h1{font-size:34px}.cycle{display:none}.eyebrow{margin-top:0}footer{font-size:10px}}
+    @media(prefers-reduced-motion:reduce){.progress span{transition:none}}
+    /* The completion certificate panel (certificate.js), laid out in the game's own 1600 x 1000 coordinates and scaled with the canvas. */
+    #cert-layer{position:absolute;left:0;top:0;width:1600px;height:1000px;transform-origin:0 0;pointer-events:none;font-family:Inter,"Segoe UI",Arial,sans-serif;color:#e0f0f5}
+    #cert-layer>*{position:absolute;pointer-events:auto;box-sizing:border-box}
+    #cert-head{left:752px;top:358px;font-weight:700;font-size:15px;line-height:1;letter-spacing:.14em;color:#3bdbeb}
+    #cert-intro{left:752px;top:388px;width:536px;font-size:17px;line-height:1.42;margin:0}
+    #cert-name{left:752px;top:470px;width:290px;height:52px;padding:0 14px;font:600 20px Inter,"Segoe UI",Arial,sans-serif;color:#fff;background:rgba(59,219,235,.07);border:1px solid rgba(59,219,235,.42);border-radius:3px;outline:none}
+    #cert-name::placeholder{color:#6f8b96}#cert-name:focus{border-color:#3bdbeb;box-shadow:0 0 0 2px rgba(59,219,235,.25)}#cert-name:disabled{opacity:.42}
+    #cert-btn{left:752px;top:534px;width:290px;height:52px;padding:0;font:800 17px Inter,"Segoe UI",Arial,sans-serif;letter-spacing:.06em;color:#061018;background:#ffc24d;border:0;border-radius:3px;white-space:nowrap}
+    #cert-btn:hover{background:#ffd27a}#cert-btn:disabled{opacity:.38;background:#ffc24d}#cert-btn:focus-visible{outline:3px solid #3bdbeb;outline-offset:3px}
+    #cert-status{left:752px;top:600px;width:290px;font-size:15px;line-height:1.42;color:#8fb3bf}#cert-status.ok{color:#57e0a6}#cert-status.warn{color:#ffc24d}
+    #cert-preview{left:1062px;top:470px;width:226px;height:175px;border:1px solid #24465a;background:#03080c;-webkit-touch-callout:default}
+    #cert-lock{left:1062px;top:470px;width:226px;height:175px;border:1px dashed #2f5366;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;color:#6f8b96;font-size:13px;line-height:1.35;padding:0 18px}
+    #cert-lock b{font-size:15px;letter-spacing:.16em;color:#8fb3bf}
+    #cert-code{left:1062px;top:656px;width:226px;text-align:center;font-weight:700;font-size:16px;letter-spacing:.12em;color:#ffc24d}
+    #cert-tip{left:1062px;top:684px;width:226px;text-align:center;font-size:13px;line-height:1.35;color:#8fb3bf}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="identity"><div class="brand">THE BATTLE OF <b>EMBDEN</b></div><div id="save-status" role="status" aria-live="polite">Checking your browser save…</div></div>
+    <nav class="toolbar" aria-label="Game and save controls">
+      <button id="download-save" class="primary" type="button" disabled>Download Save</button>
+      <button id="load-save" type="button" disabled>Load Save</button>
+      <button id="save-details" type="button">Save details</button>
+      <button id="help" type="button">Help</button>
+      <button id="fullscreen" type="button" disabled>Full screen</button>
+      <button id="save-exit" type="button" disabled>Save &amp; exit</button>
+    </nav>
+    <input id="save-file" type="file" accept=".json,application/json" hidden>
+  </header>
+  <main>
+    <canvas id="unity-canvas" tabindex="0" aria-label="The Battle of Embden, a glycolysis practice game. Use the keyboard, mouse or touch to choose answers."></canvas>
+    <div id="loading" aria-live="polite">
+      <div class="load-card">
+        <div class="cycle" aria-hidden="true"><svg viewBox="0 0 100 100" fill="none"><path d="M10 88 L90 12" stroke="currentColor" stroke-width="2"/><g fill="currentColor"><circle cx="10" cy="88" r="4.5"/><circle cx="18" cy="80.4" r="4.5"/><circle cx="26" cy="72.8" r="4.5"/><circle cx="34" cy="65.2" r="4.5"/><circle cx="42" cy="57.6" r="4.5"/><circle cx="50" cy="50" r="4.5"/><circle cx="58" cy="42.4" r="4.5"/><circle cx="66" cy="34.8" r="4.5"/><circle cx="74" cy="27.2" r="4.5"/><circle cx="82" cy="19.6" r="4.5"/></g><circle cx="90" cy="12" r="6.5" fill="#f4c36a"/></svg></div>
+        <div class="eyebrow">GLYCOLYSIS · EXTRA CREDIT</div>
+        <h1>THE BATTLE OF<br><span>EMBDEN</span></h1>
+        <p>Ten steps to the bunker.<br>Glucose in, pyruvate out.</p>
+        <div class="progress" role="progressbar" aria-label="Loading game" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="progress-fill"></span></div>
+        <div id="loading-label">PREPARING THE MISSION</div>
+        <div id="load-error" role="alert" hidden></div><button id="retry" type="button" hidden>Reload game</button>
+        <p class="fine">Extra credit: answer all 66 questions in one visit,<br>then download your certificate at the end.</p>
+      </div>
+    </div>
+    <div id="cert-layer" hidden>
+      <div id="cert-head">EXTRA CREDIT &nbsp;•&nbsp; COMPLETION CERTIFICATE</div>
+      <p id="cert-intro">Type your first and last name as it appears in D2L, then download your certificate (a PNG picture) and upload it to the D2L assignment folder.</p>
+      <input id="cert-name" type="text" maxlength="60" autocomplete="name" spellcheck="false" placeholder="First and last name" aria-label="Your name for the certificate">
+      <button id="cert-btn" type="button" disabled>DOWNLOAD CERTIFICATE</button>
+      <div id="cert-status" role="status" aria-live="polite"></div>
+      <img id="cert-preview" alt="Preview of your completion certificate" hidden>
+      <div id="cert-lock" hidden><b>LOCKED</b>All 66 questions in one visit unlock the certificate.</div>
+      <div id="cert-code"></div>
+      <div id="cert-tip" hidden></div>
+    </div>
+  </main>
+  <footer>Extra credit: answer all 66 questions in one visit, then download your certificate on the completion screen. Progress also saves in this browser for practice. Press Esc to see the controls.</footer>
+  <dialog id="message-dialog" aria-labelledby="message-title"><h2 id="message-title"></h2><p id="message-body"></p><form method="dialog"><button>Close message</button></form></dialog>
+  <dialog id="import-dialog" aria-labelledby="import-title">
+    <h2 id="import-title">Load this mission record?</h2><p id="import-summary"></p>
+    <p>This replaces the progress currently open in this browser. Download your current save first if you want to keep it. The game will restart with the selected save, and the certificate count for this visit starts over.</p>
+    <p id="import-error" role="alert" hidden></p>
+    <div class="dialog-actions"><button id="backup-before-load" type="button">Download current save</button><button id="confirm-load" class="primary" type="button">Replace &amp; load</button><button id="cancel-load" type="button">Cancel</button></div>
+  </dialog>
+  <script src="browser-save.js"></script>
+  <script>window.EMBDEN_BUILD_FILES = {"loaderUrl":"Build/Web.loader.js","dataUrl":"Build/Web.data.unityweb","frameworkUrl":"Build/Web.framework.js.unityweb","codeUrl":"Build/Web.wasm.unityweb","streamingAssetsUrl":"StreamingAssets"};</script>
+  <script src="certificate.js"></script>
+  <script src="browser-shell.js"></script>
+</body>
+</html>

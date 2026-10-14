@@ -1,0 +1,45 @@
+THE BATTLE OF EMBDEN - CREDITS AND NOTICES
+
+3D models, supplied by the course author:
+
+  AT-ST walker: "Star Wars AT-ST Scout" by Sean Turner, from BlenderKit
+  (asset 3aad9a7f-092b-4745-81a4-7e34bb6a87fb). BlenderKit Royalty Free licence.
+
+  Speeder bike: "StarWars Speeder Bike [free download]" by Idmenthal, from Sketchfab
+  (model 1d0ea6fe43c1405b8d4b17722e166f6e). Licensed CC BY 4.0,
+  https://creativecommons.org/licenses/by/4.0/. Scaled to metres and turned for the game;
+  texture maps reduced in size.
+
+  Speeder bike rider: "Obi Wan rig", posted by maxigrec, from Sketchfab
+  (model 3bf4cccf792a4d8b88fd5cd14e989f64). Listed there as CC BY 4.0,
+  https://creativecommons.org/licenses/by/4.0/. The listing describes the figure as taken from
+  the game Star Wars: Force Arena, so the poster may not have been able to license it; it is used
+  here in a free, ungraded course game only. Scaled, posed on the bike and frozen; the lightsaber
+  hilt was left out.
+
+  Chewbacca (at the AT-ST's roof hatch): "Chewbacca", posted by Stym, from Sketchfab
+  (model b3ba110bfb804c4aa1bf8bc9f27391b0). Listed there as CC BY 4.0. The file's own names
+  (hero_chewbacca_01 and its texture names) are those of a commercial game, so the poster may not
+  have been able to license it; it is used here in a free, ungraded course game only. Cut off
+  below the waist, thinned, and drawn larger than life.
+
+  Ewok: "Ewok" by Ulrik S. Selvik (Nemi66), from Sketchfab
+  (model 77fb4fc353c64b8098bc2f71667f1062). Licensed CC BY 4.0,
+  https://creativecommons.org/licenses/by/4.0/. Thinned for the browser and drawn larger than life.
+
+  Endor bunker: "Star Wars Endor Bunker" by aclarke064, from Sketchfab
+  (model 1c54abb1c6824f26a0a087d2bd7a635a). Licensed CC BY-NC-SA 4.0,
+  https://creativecommons.org/licenses/by-nc-sa/4.0/. Converted from COLLADA, scaled and
+  re-centred for the game; texture maps reduced in size. Non-commercial use only; the
+  converted model is offered under the same licence.
+
+  Millennium Falcon: supplied by the course author; see Assets/FalconSource/README.txt in the
+  editable Unity project. No broader license or ownership claim is made for the supplied model.
+
+This is an unofficial fan learning game. Star Wars names and designs belong to their respective
+rights holders. The game is not affiliated with Lucasfilm or Disney. Game audio is originally
+synthesized, not recorded film audio.
+
+Biochemistry names and values follow Nelson and Cox, Lehninger Principles of Biochemistry,
+8th edition, chapter 14.
+The Inter typeface is used under the SIL Open Font License (Inter-LICENSE.txt).

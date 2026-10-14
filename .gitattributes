@@ -1,0 +1,6 @@
+*.unityweb binary
+*.glb binary
+*.wasm binary
+*.png binary
+*.jpg binary
+*.bin binary
