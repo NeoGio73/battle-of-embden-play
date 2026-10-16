@@ -3,6 +3,7 @@
 A glycolysis review game for undergraduate biochemistry, and the companion to The Krebs Run. Students lead a strike team through the ten steps of glycolysis on the forest moon of Endor: speeder bikes through the preparatory phase, a captured AT-ST through the payoff phase, then the shield bunker. Questions follow Lehninger, Principles of Biochemistry, 8th edition, chapter 14.
 
 **Play:** https://neogio73.github.io/battle-of-embden-play/
+**The game after it:** https://neogio73.github.io/krebs-run-play/ (the completion screen links there, and leaves the pilot's name in this browser for its opening)
 
 This repository holds only the finished web build that the site serves: the game (`index.html`, `Build/`), its page scripts, and the course announcement banner (`banner.html`, with light copies of the models stored scrambled in `*.bin`). It runs in the browser on a computer, tablet or phone, and nothing is sent anywhere: progress is saved in the student's own browser.
 

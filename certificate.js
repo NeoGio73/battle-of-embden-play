@@ -44,7 +44,7 @@
   const CERT = { W: 1650, H: 1275, canvas: null, blob: null, blobName: '', url: '', timer: 0, seq: 0, ready: false, shown: false, fonts: null, saving: false,
     end: 0, dur: 0, first: 0, answered: 0, total: 66 };
   const els = { layer: byId('cert-layer'), name: byId('cert-name'), btn: byId('cert-btn'), status: byId('cert-status'), img: byId('cert-preview'),
-    code: byId('cert-code'), tip: byId('cert-tip'), lock: byId('cert-lock') };
+    code: byId('cert-code'), tip: byId('cert-tip'), lock: byId('cert-lock'), krebs: byId('cert-krebs') };
   // In the Claude artifact viewer, downloads go through its "downloads" capability; anywhere else a plain link download is used.
   let certDlP = null;
   const certGetDl = () => {
@@ -176,9 +176,16 @@
     if (seq !== CERT.seq || !blob) return null;
     if (CERT.url) URL.revokeObjectURL(CERT.url);
     CERT.blob = blob; CERT.blobName = info.name; CERT.url = URL.createObjectURL(blob);
+    if (info.name) certRememberPilot(info.name);
     els.img.src = CERT.url; els.img.hidden = false;
     els.code.textContent = info.name ? info.code : '';
     return { blob, info };
+  }
+
+  // The name a certificate was made for is left behind for The Krebs Run, whose opening welcomes the pilot aboard
+  // (its embden-handoff.js reads it). Only on this site, and failure is silent.
+  function certRememberPilot(name) {
+    try { localStorage.setItem('battle-of-embden:pilot:v1', JSON.stringify({ name, at: new Date().toISOString() })); } catch (err) { /* storage unavailable */ }
   }
 
   // ---------- The panel ----------
@@ -263,6 +270,8 @@
       new Promise(res => setTimeout(res, 2500))]);
     const wasShown = CERT.shown; CERT.shown = true; els.layer.hidden = false; place(); certGetDl();
     els.layer.classList.toggle('locked', !CERT.ready);
+    // Once the certificate unlocks, an ordinary link (so no browser blocks it) carries on to The Krebs Run.
+    els.krebs.hidden = !CERT.ready;
     if (!CERT.ready) {
       els.name.disabled = true; els.btn.disabled = true; els.tip.hidden = true; els.img.hidden = true; els.lock.hidden = false; els.code.textContent = '';
       certStatus(`The certificate unlocks after a full playthrough: all ${CERT.total} questions answered in one visit. So far this visit: ${CERT.answered} of ${CERT.total}.`, 'warn');
