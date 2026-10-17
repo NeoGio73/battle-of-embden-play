@@ -657,10 +657,12 @@ const ready = Promise.all([
   }),
 ]);
 let last = 0, running = false, visible = true, raf = 0;
-function frame(now) {
+function frame() {
   raf = 0;
   if (!running) return;
-  const dt = Math.min(0.05, (now - last) / 1000 || 0.016); last = now;
+  // the clock keeps real time. It reads performance.now() rather than the frame's time stamp, which some browsers and screens
+  // repeat; a repeat used to count as a fresh 16 ms, so the loop could run up to three times too fast. A stall moves it on at most 0.1 s.
+  const now = performance.now(), dt = Math.min(0.1, Math.max(0, (now - last) / 1000)); last = now;
   layout();
   try { step(dt); renderer.render(scene, camera); } catch (err) { console.error(err); }   // one bad frame never stops the show
   raf = requestAnimationFrame(frame);
